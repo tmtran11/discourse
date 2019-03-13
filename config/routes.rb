@@ -500,6 +500,7 @@ Discourse::Application.routes.draw do
       get 'mentionable'
       get 'messageable'
       get 'logs' => 'groups#histories'
+      get 'mailboxes'
 
       collection do
         get "check-name" => 'groups#check_name'
@@ -519,6 +520,7 @@ Discourse::Application.routes.draw do
           manage/members
           manage/membership
           manage/interaction
+          manage/email
           manage/logs
         }.each do |path|
           get path => 'groups#show'
