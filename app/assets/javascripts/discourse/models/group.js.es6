@@ -178,6 +178,15 @@ const Group = RestModel.extend({
       primary_group: !!this.get("primary_group"),
       grant_trust_level: this.get("grant_trust_level"),
       incoming_email: this.get("incoming_email"),
+      smtp_server: this.get("smtp_server"),
+      smtp_port: this.get("smtp_port"),
+      smtp_ssl: this.get("smtp_ssl"),
+      imap_server: this.get("imap_server"),
+      imap_port: this.get("imap_port"),
+      imap_ssl: this.get("imap_ssl"),
+      email_username: this.get("email_username"),
+      email_password: this.get("email_password"),
+      mailboxes: this.get("extras.mailboxes"),
       flair_url: this.get("flair_url"),
       flair_bg_color: this.get("flairBackgroundHexColor"),
       flair_color: this.get("flairHexColor"),
@@ -261,6 +270,12 @@ const Group = RestModel.extend({
         });
       }
     );
+  },
+
+  findMailboxes(refresh) {
+    return ajax(`/groups/${this.get("name")}/mailboxes.json`, {
+      data: { refresh }
+    }).then(result => Ember.Object.create(result["mailboxes"]));
   },
 
   setNotification(notification_level, userId) {

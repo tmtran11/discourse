@@ -1,0 +1,43 @@
+{{#if currentUser.admin}}
+  <label class="control-label">{{i18n "groups.manage.email.credentials.title"}}</label>
+
+  <div class="control-group">
+    <label for="smtp_server">{{i18n "groups.manage.email.credentials.smtp_server"}}</label>
+    {{input type="text" name="smtp_server" value=model.smtp_server}}
+  </div>
+
+  <div class="control-group">
+    <label for="smtp_port">{{i18n "groups.manage.email.credentials.smtp_port"}}</label>
+    {{input type="text" name="smtp_port" value=model.smtp_port}}
+  </div>
+
+  <div class="control-group">
+    <label for="smtp_ssl">{{i18n "groups.manage.email.credentials.smtp_ssl"}}</label>
+    {{input type="checkbox" name="smtp_ssl" checked=model.smtp_ssl}}
+  </div>
+
+  <div class="control-group">
+    <label for="imap_server">{{i18n "groups.manage.email.credentials.imap_server"}}</label>
+    {{input type="text" name="imap_server" value=model.imap_server}}
+  </div>
+
+  <div class="control-group">
+    <label for="imap_port">{{i18n "groups.manage.email.credentials.imap_port"}}</label>
+    {{input type="text" name="imap_port" value=model.imap_port}}
+  </div>
+
+  <div class="control-group">
+    <label for="imap_ssl">{{i18n "groups.manage.email.credentials.imap_ssl"}}</label>
+    {{input type="checkbox" name="imap_ssl" checked=model.imap_ssl}}
+  </div>
+
+  <div class="control-group">
+    <label for="username">{{i18n "groups.manage.email.credentials.username"}}</label>
+    {{input type="text" name="username" value=model.email_username}}
+  </div>
+
+  <div class="control-group">
+    <label for="password">{{i18n "groups.manage.email.credentials.password"}}</label>
+    {{input type="password" name="password" value=model.email_password}}
+  </div>
+{{/if}}

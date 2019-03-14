@@ -13,6 +13,14 @@ class BasicGroupSerializer < ApplicationSerializer
              :title,
              :grant_trust_level,
              :incoming_email,
+             :smtp_server,
+             :smtp_port,
+             :smtp_ssl,
+             :imap_server,
+             :imap_port,
+             :imap_ssl,
+             :email_username,
+             :email_password,
              :has_messages,
              :flair_url,
              :flair_bg_color,
@@ -44,6 +52,38 @@ class BasicGroupSerializer < ApplicationSerializer
 
   def include_automatic_membership_email_domains?
     scope.is_admin?
+  end
+
+  def include_smtp_server?
+    staff?
+  end
+
+  def include_smtp_port?
+    staff?
+  end
+
+  def include_smtp_ssl?
+    staff?
+  end
+
+  def include_imap_server?
+    staff?
+  end
+
+  def include_imap_port?
+    staff?
+  end
+
+  def include_imap_ssl?
+    staff?
+  end
+
+  def include_email_username?
+    staff?
+  end
+
+  def include_email_password?
+    staff?
   end
 
   def include_automatic_membership_retroactive?

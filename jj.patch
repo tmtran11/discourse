@@ -1,0 +1,548 @@
+From aaac650f7e34b585e788aeb7ac3014cd9b5a9b43 Mon Sep 17 00:00:00 2001
+From: Joffrey JAFFEUX <j.jaffeux@gmail.com>
+Date: Thu, 14 Mar 2019 15:06:53 +0100
+Subject: [PATCH] more tests and refactoring
+
+---
+ .../components/groups-form-email-fields.hbs   |   2 -
+ lib/imap/providers/generic.rb                 |  41 ++++++-
+ lib/imap/providers/gmail.rb                   |  34 ++++--
+ lib/{ => imap/providers}/imap_gmail_patch.rb  |   0
+ lib/imap/sync.rb                              |  98 ++++++-----------
+ spec/components/imap/imap_helper.rb           |  35 ++++--
+ spec/components/imap/sync_spec.rb             | 102 ++++++++----------
+ 7 files changed, 174 insertions(+), 138 deletions(-)
+ rename lib/{ => imap/providers}/imap_gmail_patch.rb (100%)
+
+diff --git a/app/assets/javascripts/discourse/templates/components/groups-form-email-fields.hbs b/app/assets/javascripts/discourse/templates/components/groups-form-email-fields.hbs
+index 20de4b262a6..cd45bb9bbd1 100644
+--- a/app/assets/javascripts/discourse/templates/components/groups-form-email-fields.hbs
++++ b/app/assets/javascripts/discourse/templates/components/groups-form-email-fields.hbs
+@@ -1,8 +1,6 @@
+ {{#if currentUser.admin}}
+   <label class="control-label">{{i18n "groups.manage.email.credentials.title"}}</label>
+ 
+-  {{log model}}
+-
+   <div class="control-group">
+     <label for="smtp_server">{{i18n "groups.manage.email.credentials.smtp_server"}}</label>
+     {{input type="text" name="smtp_server" value=model.smtp_server}}
+diff --git a/lib/imap/providers/generic.rb b/lib/imap/providers/generic.rb
+index 7fc38b686b8..9c432c20f65 100644
+--- a/lib/imap/providers/generic.rb
++++ b/lib/imap/providers/generic.rb
+@@ -3,12 +3,15 @@
+ class Imap::Providers::Generic
+   IMAP_LIBRARY = Net::IMAP
+ 
++  attr_reader :remote_labels
++
+   def initialize(server, options = {})
+     @server = server
+     @port = options[:port] || 993
+     @ssl = options[:ssl] || true
+     @username = options[:username]
+     @password = options[:password]
++    @remote_labels = []
+   end
+ 
+   def imap
+@@ -29,10 +32,8 @@ def uids_from(uid)
+ 
+   def connect!
+     imap.login(@username, @password)
+-  end
+ 
+-  def labels
+-    extract_labels(list_mailboxes)
++    @remote_labels = extract_labels(list_mailboxes)
+   end
+ 
+   def select_mailbox(mailbox)
+@@ -55,7 +56,7 @@ def uid_search(uid)
+     imap.uid_search(uid)
+   end
+ 
+-  def emails(uids, fields = [])
++  def emails(mailbox, uids, fields = [])
+     imap.uid_fetch(uids, fields).map do |email|
+       attributes = {}
+ 
+@@ -72,13 +73,45 @@ def to_tag(label)
+     label if label != "all-mail" && label != "inbox" && label != "sent"
+   end
+ 
++  def tag_to_flag(tag)
++    :Seen if tag == "seen"
++  end
++
++  def tag_to_label(tag, labels)
++    labels[tag]
++  end
++
+   def disconnect!
+     imap.logout
+     imap.disconnect
+   end
+ 
++  def sync_flags(uid, topic, email)
++    topic_tags = topic.tags.pluck(:name)
++
++    flags = email["FLAGS"]
++    new_flags = topic_tags.map { |tag| tag_to_flag(tag) }.reject(&:blank?)
++    store(uid, "FLAGS", flags, new_flags)
++  end
++
+   private
+ 
++  def store(uid, attribute, old_set, new_set)
++    additions = new_set.reject { |val| old_set.include?(val) }
++    add_attribute(attribute, uid, additions)
++
++    removals = old_set.reject { |val| new_set.include?(val) }
++    remove_attribute(attribute, uid, removals)
++  end
++
++  def add_attribute(attribute, uid, values)
++    imap.uid_store(Array(uid), "+#{attribute}", values) if values.length > 0
++  end
++
++  def remove_attribute(attribute, uid, values)
++    imap.uid_store(Array(uid), "-#{attribute}", values) if values.length > 0
++  end
++
+   def list_mailboxes
+     imap.list('', '*').map(&:name)
+   end
+diff --git a/lib/imap/providers/gmail.rb b/lib/imap/providers/gmail.rb
+index e42c2831850..b12dff2a6a8 100644
+--- a/lib/imap/providers/gmail.rb
++++ b/lib/imap/providers/gmail.rb
+@@ -1,6 +1,8 @@
+-require_dependency "imap_gmail_patch"
++require_relative "imap_gmail_patch"
+ 
+ class Imap::Providers::Gmail < Imap::Providers::Generic
++  X_GM_LABELS = "X-GM-LABELS"
++
+   def imap
+     @imap ||= begin
+       imap = super
+@@ -11,23 +13,43 @@ def imap
+ 
+   def to_tag(label)
+     label = label.to_s.gsub("[Gmail]/", "")
++
+     super(label)
+   end
+ 
+-  def emails(uids, fields = [])
+-    fields[fields.index("LABELS")] = "X-GM-LABELS"
++  def emails(mailbox, uids, fields = [])
++    fields[fields.index("LABELS")] = X_GM_LABELS
+ 
+-    emails = super(uids, fields)
++    emails = super(mailbox, uids, fields)
+ 
+     emails.each do |email|
+-      if email["X-GM-LABELS"]
+-        email["LABELS"] = email["LABELS"] + email.delete("X-GM-LABELS")
++      email["LABELS"] = Array(email["LABELS"])
++
++      if email[X_GM_LABELS]
++        email["LABELS"] << Array(email.delete(X_GM_LABELS))
++        email["LABELS"].flatten!
+       end
++
++      email["LABELS"] << "\\Inbox" if mailbox.name == "INBOX"
++
++      email["LABELS"].uniq!
+     end
+ 
+     emails
+   end
+ 
++  def sync_flags(uid, topic, email)
++    super
++
++    topic_tags = topic.tags.pluck(:name)
++
++    labels = email["LABELS"]
++    new_labels = topic_tags.map { |tag| tag_to_label(tag, @remote_labels) }.reject(&:blank?)
++    new_labels << "\\Inbox" if topic.group_archived_messages.length == 0
++
++    store(uid, X_GM_LABELS, labels, new_labels)
++  end
++
+   private
+ 
+   def extract_labels(mailboxes)
+diff --git a/lib/imap_gmail_patch.rb b/lib/imap/providers/imap_gmail_patch.rb
+similarity index 100%
+rename from lib/imap_gmail_patch.rb
+rename to lib/imap/providers/imap_gmail_patch.rb
+diff --git a/lib/imap/sync.rb b/lib/imap/sync.rb
+index bd252b8402a..32d3e81a6bf 100644
+--- a/lib/imap/sync.rb
++++ b/lib/imap/sync.rb
+@@ -13,13 +13,9 @@ def initialize(group, provider = Imap::Providers::Generic)
+       )
+ 
+       @provider.connect!
+-
+-      @labels = @provider.labels
+     end
+ 
+     def process(mailbox)
+-      @mailbox = mailbox
+-
+       @status = @provider.mailbox_status(mailbox)
+ 
+       if @status[:uid_validity] != mailbox.uid_validity
+@@ -40,19 +36,20 @@ def process(mailbox)
+       end
+ 
+       if old_uids.present?
+-        emails = @provider.emails(old_uids, ["UID", "FLAGS", "LABELS"])
++        emails = @provider.emails(mailbox, old_uids, ["UID", "FLAGS", "LABELS"])
+         emails.each do |email|
+           incoming_email = IncomingEmail.find_by(
+             imap_uid_validity: @status[:uid_validity],
+             imap_uid: email["UID"]
+           )
+ 
+-          update_topic(email, incoming_email)
++          set_topic_archived_state(email, incoming_email, @group)
++          set_topic_tags(incoming_email, email, mailbox, @provider)
+         end
+       end
+ 
+       if new_uids.present?
+-        emails = @provider.emails(new_uids, ["UID", "FLAGS", "LABELS", "RFC822"])
++        emails = @provider.emails(mailbox, new_uids, ["UID", "FLAGS", "LABELS", "RFC822"])
+         emails.each do |email|
+           begin
+             receiver = Email::Receiver.new(email["RFC822"],
+@@ -62,11 +59,11 @@ def process(mailbox)
+             )
+             receiver.process!
+ 
+-            update_topic(email, receiver.incoming_email)
++            set_topic_archived_state(email, receiver.incoming_email, @group)
++            set_topic_tags(receiver.incoming_email, email, mailbox, @provider)
+ 
+             mailbox.last_seen_uid = email["UID"]
+           rescue Email::Receiver::ProcessingError => e
+-            p e
+           end
+         end
+       end
+@@ -78,36 +75,36 @@ def process(mailbox)
+       # TODO: Client-to-server sync:
+       #       - sending emails using SMTP
+       #       - sync labels
+-
+-      # IncomingEmail.where(imap_sync: true).each do |incoming_email|
+-      #   update_email(incoming_email)
+-      # end
++      IncomingEmail.where(imap_sync: true).each do |incoming_email|
++        update_email(incoming_email, mailbox, @provider)
++      end
+     end
+ 
+     def disconnect!
+       @provider.disconnect!
+     end
+ 
+-    def update_topic(email, incoming_email)
+-      return if incoming_email&.post&.post_number != 1 || incoming_email.imap_sync
++    private
++
++    def update_email(incoming_email, mailbox, provider)
++      return if incoming_email&.post&.post_number != 1 || !incoming_email.imap_sync
++      return unless email = @provider.emails(mailbox, incoming_email.imap_uid, ["FLAGS", "LABELS"]).first
++
++      incoming_email.update(imap_sync: false)
+ 
+-      labels = email["LABELS"]
+-      flags = email["FLAGS"]
+       topic = incoming_email.topic
++      provider.sync_flags(incoming_email.imap_uid, topic, email)
++    end
+ 
+-      # Sync archived status of topic.
+-      old_archived = topic.group_archived_messages.length > 0
+-      new_archived = !labels.include?("\\Inbox")
++    def set_topic_tags(incoming_email, email, mailbox, provider)
++      return if incoming_email&.post&.post_number != 1 || incoming_email.imap_sync
+ 
+-      if old_archived && !new_archived
+-        GroupArchivedMessage.move_to_inbox!(@group.id, topic)
+-      elsif !old_archived && new_archived
+-        GroupArchivedMessage.archive!(@group.id, topic)
+-      end
++      topic = incoming_email.topic
++      labels = email["LABELS"]
++      flags = email["FLAGS"]
+ 
+-      # Sync email flags and labels with topic tags.
+-      tags = [ to_tag(@mailbox.name), flags.include?(:Seen) && "seen" ]
+-      labels.each { |label| tags << to_tag(label) }
++      tags = [ provider.to_tag(mailbox.name), flags.include?(:Seen) && "seen" ]
++      labels.each { |label| tags << provider.to_tag(label) }
+       tags.reject!(&:blank?)
+ 
+       # TODO: Optimize tagging.
+@@ -115,44 +112,17 @@ def update_topic(email, incoming_email)
+       DiscourseTagging.tag_topic_by_names(topic, Guardian.new(Discourse.system_user), tags)
+     end
+ 
+-    def update_email(incoming_email)
+-      return if incoming_email&.post&.post_number != 1 || !incoming_email.imap_sync
+-      return unless email = @provider.emails(incoming_email.imap_uid, ["FLAGS", "LABELS"]).first
+-      # incoming_email.update(imap_sync: false)
++    def set_topic_archived_state(email, incoming_email, group)
++      return if incoming_email&.post&.post_number != 1 || incoming_email.imap_sync
+ 
+-      labels = email["LABELS"]
+-      flags = email["FLAGS"]
+       topic = incoming_email.topic
+-
+-      # Sync topic status and labels with email flags and labels.
+-      tags = topic.tags.pluck(:name)
+-      new_flags = tags.map { |tag| tag_to_flag(tag) }.reject(&:blank?)
+-      new_labels = tags.map { |tag| tag_to_label(tag) }.reject(&:blank?)
+-      new_labels << "\\Inbox" if topic.group_archived_messages.length == 0
+-      store(incoming_email.imap_uid, "FLAGS", flags, new_flags)
+-      store(incoming_email.imap_uid, "LABELS", labels, new_labels)
+-    end
+-
+-    def store(uid, attribute, old_set, new_set)
+-      additions = new_set.reject { |val| old_set.include?(val) }
+-      @provider.uid_store(uid, "+#{attribute}", additions) if additions.length > 0
+-      removals = old_set.reject { |val| new_set.include?(val) }
+-      @provider.uid_store(uid, "-#{attribute}", removals) if removals.length > 0
+-    end
+-
+-    def tag_to_flag(tag)
+-      :Seen if tag == "seen"
+-    end
+-
+-    def tag_to_label(tag)
+-      @labels[tag]
+-    end
+-
+-    def to_tag(label)
+-      label = label.to_s.gsub("[Gmail]/", "")
+-      label = DiscourseTagging.clean_tag(label.to_s)
+-
+-      label if label != "all-mail" && label != "inbox" && label != "sent"
++      topic_is_archived = topic.group_archived_messages.length > 0
++      email_is_archived = !email["LABELS"].include?("\\Inbox")
++      if topic_is_archived && !email_is_archived
++        GroupArchivedMessage.move_to_inbox!(group.id, topic)
++      elsif !topic_is_archived && email_is_archived
++        GroupArchivedMessage.archive!(group.id, topic)
++      end
+     end
+   end
+ 
+diff --git a/spec/components/imap/imap_helper.rb b/spec/components/imap/imap_helper.rb
+index 40197230818..a3e043279ea 100644
+--- a/spec/components/imap/imap_helper.rb
++++ b/spec/components/imap/imap_helper.rb
+@@ -7,18 +7,39 @@ def disconnect!
+ 
+   def select_mailbox(mailbox)
+   end
++
++  def labels
++    ["INBOX"]
++  end
+ end
+ 
+ def EmailFabricator(options)
+-  <<~TXT
+-    Delivered-To: #{options[:to] || "joffrey@discourse.org"}
++  email = ""
++
++  if options[:in_reply_to]
++    email += <<~TXT
++      In-Reply-To: #{options[:in_reply_to]}
++      References: #{options[:in_reply_to]}
++    TXT
++  end
++
++  if options[:message_id]
++    email += <<~TXT
++      Message-ID: #{options[:message_id]}
++    TXT
++  end
++
++  email += <<~TXT
+     MIME-Version: 1.0
+-    From: #{options[:from] || "John <john@free.fr>"}
++    To: #{options[:to] || "Joffrey <joffrey@discourse.org>"}
++    From: #{options[:from] || "Dan <dan@discourse.org>"}
+     Date: Sat, 31 Mar 2018 17:50:19 -0700
+-    Subject: #{options[:subject] || "This is the email post"}
+-    To: #{options[:to] || "joffrey@discourse.org"}
+-    Content-Type: text/plain; charset="UTF-8"
++    Subject: #{options[:subject] || "This is a test email subhect"}
++    To: #{options[:to] || "Joffrey <joffrey@discourse.org>"}
++    Content-Type: #{options[:content_type] || 'text/plain; charset="UTF-8"'}
+ 
+-    #{options[:body] || "This is the email *body*. :smile:"}
++    #{options[:body] || "This is an email *body*. :smile:"}
+   TXT
++
++  email
+ end
+diff --git a/spec/components/imap/sync_spec.rb b/spec/components/imap/sync_spec.rb
+index bf8c5dc8bb0..03f63cfa48f 100644
+--- a/spec/components/imap/sync_spec.rb
++++ b/spec/components/imap/sync_spec.rb
+@@ -15,8 +15,8 @@
+     let(:group) {
+       Fabricate(:group,
+         imap_server: "imap.gmail.com",
+-        email_username: "weareyodateam@gmail.com",
+-        email_password: "yodateam123"
++        email_username: "xxx",
++        email_password: "zzz"
+       )
+     }
+ 
+@@ -34,7 +34,6 @@
+ 
+       before do
+         provider = MockedImapProvider.any_instance
+-        provider.stubs(:labels).returns(["INBOX"])
+         provider.stubs(:mailbox_status).returns(uid_validity: 1)
+         provider.stubs(:all_uids).returns([1])
+         provider.stubs(:uids_until).returns([1])
+@@ -75,79 +74,72 @@
+       end
+     end
+ 
+-    context "creates topic from email with no previous sync" do
++    context "creates topic and posts from email with multiple exchanges" do
+       let(:first_email_sender) { "john@free.fr" }
+-      let(:first_email_subject) { "Testing email post" }
+       let(:second_email_sender) { "sam@free.fr" }
+-      let(:second_email_subject) { "Responding to email post" }
++      let(:email_subject) { "Testing email post" }
++      let(:first_body) { "This is the first message of this exchange." }
++      let(:second_body) { "<p>This is an <b>answer</b> to this message.</p>" }
+ 
+-      it "creates a topic" do
++      before do
+         provider = MockedImapProvider.any_instance
+-        provider.stubs(:labels).returns(["INBOX"])
+         provider.stubs(:mailbox_status).returns(uid_validity: 1)
+-        provider.stubs(:all_uids).returns([1])
++        provider.stubs(:all_uids).returns([1, 2])
+         provider.stubs(:emails).returns([
+           {
+             "UID" => 1,
+-            "LABELS" => ["\\Inbox", "test-label"],
++            "LABELS" => ["\\Inbox"],
++            "FLAGS" => [:Seen],
++            "RFC822" => EmailFabricator(
++              message_id: "<x@gmail.com>",
++              from: second_email_sender,
++              to: first_email_sender,
++              subject: email_subject,
++              body: first_body
++            )
++          },
++          {
++            "UID" => 2,
++            "LABELS" => ["\\Inbox"],
+             "FLAGS" => [:Recent],
+-            "RFC822" => EmailFabricator(from: first_email_sender, subject: first_email_subject)
++            "RFC822" => EmailFabricator(
++              message_id: "<y@gmail.com>",
++              in_reply_to: "<x@gmail.com>",
++              from: first_email_sender,
++              to: second_email_sender,
++              subject: "Re: #{email_subject}",
++              body: second_body
++            )
+           }
+         ])
+ 
+-        expect(Topic.count).to eq(0)
+-
+         group.mailboxes.where(sync: true).each do |mailbox|
+           sync_handler.process(mailbox)
+         end
+ 
+-        expect(Topic.count).to eq(1)
+-
+         @topic = Topic.last
++        @posts = @topic.posts.where('posts.post_type IN (?)', Post.types[:regular]).by_post_number
++      end
+ 
+-        expect(@topic.posts.where('posts.post_type IN (?)', Post.types[:regular]).count).to eq(1)
+-        expect(@topic.title).to eq(first_email_subject)
+-        expect(@topic.user.email).to eq(first_email_sender)
++      it "creates a topic with posts" do
++        expect(Topic.count).to eq(1)
++        expect(@posts.count).to eq(2)
++      end
+ 
+-        provider = MockedImapProvider.any_instance
+-        provider.stubs(:labels).returns(["INBOX"])
+-        provider.stubs(:mailbox_status).returns(uid_validity: 1)
+-        provider.stubs(:uids_until).returns([1])
+-        provider.stubs(:uids_from).returns([2])
+-        provider.stubs(:emails).with([1], ["UID", "FLAGS", "LABELS"]).returns([
+-          {
+-            "UID" => 1,
+-            "LABELS" => ["\\Inbox", "test-label"],
+-            "FLAGS" => [:Seen],
+-            "RFC822" => EmailFabricator(from: first_email_sender, subject: first_email_subject)
+-          }
+-        ])
+-        provider.stubs(:emails).with([2], ["UID", "FLAGS", "LABELS", "RFC822"]).returns([
+-          {
+-            "UID" => 2,
+-            "LABELS" => ["\\Inbox", "test-label"],
+-            "FLAGS" => [:Recent],
+-            "RFC822" => EmailFabricator(from: second_email_sender, subject: second_email_subject)
+-          }
+-        ])
++      it "has the correct topic infos" do
++        expect(@topic.archived).to eq(false)
++        expect(@topic.user.email).to eq(second_email_sender)
++        expect(@topic.title).to eq(email_subject)
++      end
+ 
+-        group.mailboxes.where(sync: true).each do |mailbox|
+-          sync_handler.process(mailbox)
+-        end
++      it "has the correct post infos" do
++        first_post = @posts[0]
++        expect(first_post.user.email).to eq(second_email_sender)
++        expect(first_post.raw).to eq(first_body)
+ 
+-        @topic.reload
+-
+-        # posts = @topic.posts.where('posts.post_type IN (?)', Post.types[:regular]).by_post_number
+-        #
+-        # expect(Topic.count).to eq(1)
+-        # expect(posts.count).to eq(2)
+-        #
+-        # expect(@topic.title).to eq(first_email_subject)
+-        # expect(@topic.user.email).to eq(first_email_sender)
+-        #
+-        # post = posts.last
+-        #
+-        # p post.user
++        second_post = @posts[1]
++        expect(second_post.user.email).to eq(first_email_sender)
++        expect(second_post.raw).to eq(second_body)
+       end
+     end
+   end
