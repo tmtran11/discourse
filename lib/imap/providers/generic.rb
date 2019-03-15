@@ -61,7 +61,7 @@ class Imap::Providers::Generic
     }
   end
 
-  def emails(uids, fields)
+  def emails(mailbox, uids, fields)
     imap.uid_fetch(uids, fields).map do |email|
       attributes = {}
 

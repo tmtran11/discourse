@@ -43,7 +43,7 @@ module Imap
       end
 
       if old_uids.present?
-        emails = @provider.emails(old_uids, ["UID", "FLAGS", "LABELS"])
+        emails = @provider.emails(mailbox, old_uids, ["UID", "FLAGS", "LABELS"])
         emails.each do |email|
           incoming_email = IncomingEmail.find_by(
             imap_uid_validity: @status[:uid_validity],
@@ -55,7 +55,7 @@ module Imap
       end
 
       if new_uids.present?
-        emails = @provider.emails(new_uids, ["UID", "FLAGS", "LABELS", "RFC822"])
+        emails = @provider.emails(mailbox, new_uids, ["UID", "FLAGS", "LABELS", "RFC822"])
         emails.each do |email|
           begin
             receiver = Email::Receiver.new(email["RFC822"],
@@ -79,7 +79,7 @@ module Imap
       #   - sync flags and labels
       @provider.open_mailbox(mailbox, true)
       IncomingEmail.where(imap_sync: true).each do |incoming_email|
-        update_email(incoming_email)
+        update_email(mailbox, incoming_email)
       end
     end
 
@@ -114,9 +114,9 @@ module Imap
       DiscourseTagging.tag_topic_by_names(topic, Guardian.new(Discourse.system_user), tags)
     end
 
-    def update_email(incoming_email)
+    def update_email(mailbox, incoming_email)
       return if incoming_email&.post&.post_number != 1 || !incoming_email.imap_sync
-      return unless email = @provider.emails(incoming_email.imap_uid, ["FLAGS", "LABELS"]).first
+      return unless email = @provider.emails(mailbox, incoming_email.imap_uid, ["FLAGS", "LABELS"]).first
       incoming_email.update(imap_sync: false)
 
       labels = email["LABELS"]
