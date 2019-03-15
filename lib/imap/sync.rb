@@ -88,22 +88,24 @@ module Imap
     def update_topic(mailbox, email, incoming_email)
       return if incoming_email&.post&.post_number != 1 || incoming_email.imap_sync
 
-      update_topic_archived_state(mailbox, email, incoming_email)
-      update_topic_tags(mailbox, email, incoming_email)
+      topic = incoming_email.topic
+
+      update_topic_archived_state(mailbox, email, topic)
+      update_topic_tags(mailbox, email, topic)
     end
 
-    def update_topic_archived_state(mailbox, email, incoming_email)
+    def update_topic_archived_state(mailbox, email, topic)
       topic_is_archived = topic.group_archived_messages.length > 0
       email_is_archived = !email["LABELS"].include?("\\Inbox")
 
       if topic_is_archived && !email_is_archived
-        GroupArchivedMessage.move_to_inbox!(@group.id, topic)
+        GroupArchivedMessage.move_to_inbox!(@group.id, topic, skip_imap_sync: true)
       elsif !topic_is_archived && email_is_archived
-        GroupArchivedMessage.archive!(@group.id, topic)
+        GroupArchivedMessage.archive!(@group.id, topic, skip_imap_sync: true)
       end
     end
 
-    def update_topic_tags(mailbox, email, incoming_email)
+    def update_topic_tags(mailbox, email, topic)
       tags = [ @provider.to_tag(mailbox.name) ]
       email["FLAGS"].each { |flag| tags << @provider.to_tag(flag) }
       email["LABELS"].each { |label| tags << @provider.to_tag(label) }
@@ -111,6 +113,8 @@ module Imap
       tags.uniq!
 
       # TODO: Optimize tagging.
+      # `DiscourseTagging.tag_topic_by_names` does a lot of lookups in the
+      # database and some of them could be cached in this context.
       DiscourseTagging.tag_topic_by_names(topic, Guardian.new(Discourse.system_user), tags)
     end
 
