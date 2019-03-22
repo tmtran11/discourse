@@ -35,7 +35,7 @@ AWS Free Tier includes 750 hours of Linux and Windows t2.micro instances each mo
 - Login as **ubuntu**  
   
 ## Install  
-
+If you successfully SSH into the EC2 Instance, you can start installing dependencies.  
 ```
 # Elevate to root user. You will need to be root through the rest of the setup and bootstrap process  
 sudo -s  
@@ -51,7 +51,7 @@ sudo -u postgres createuser -s root
 ```
 
 ## Bootstrap  
-
+After installation, go to discourse folder, installing gems, execute migration, and start sever.
 ```
 # Install gems  
 cd ~/discourse  
