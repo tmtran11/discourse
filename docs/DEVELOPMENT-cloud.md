@@ -4,9 +4,9 @@
 
 This tutorial uses **AWS** as the cloud provider. Register as a new user, and you will be free-tier eligible. AWS Free Tier includes 750 hours of Linux and Windows t2.micro instances each month for one year. To stay within the Free Tier, use only EC2 Micro instances.  
 
-### Create New Cloud Server  
+## Create New Cloud Server  
 - Sign up for AWS and create your new cloud server.  
-- In EC2 Console, launch a new **Ubuntu 18.04 LTS x64** instance.  
+- In EC2 Console, launch a new **Ubuntu 18.04 LTS x64** instance:  
 ...Step 1: Choose AMI
 ...Step 2: Choose Instance Type
 ...Step 3: Configure Instance
@@ -18,7 +18,7 @@ This tutorial uses **AWS** as the cloud provider. Register as a new user, and yo
 ...Connect to your server via its **Public IPv4** address using SSH, or [Putty][put] on Windows.
 ...Login as **ubuntu**
   
-### Install  
+## Install  
 
 ```
 # Elevate to root user. You will need to be root through the rest of the setup and bootstrap process  
@@ -34,7 +34,7 @@ git clone https://github.com/discourse/discourse.git ~/discourse
 sudo -u postgres createuser -s root  
 ```
 
-### Bootstrap  
+## Bootstrap  
 
 ```
 # Install gems  
@@ -48,5 +48,5 @@ RAILS_ENV=test bundle exec rake db:create db:migrate
 bundle exec rails server --binding=0.0.0.0  
 ```
 
-### Open Discourse on port 3000 of your server.  
+## Open Discourse on port 3000 of your server.  
   
