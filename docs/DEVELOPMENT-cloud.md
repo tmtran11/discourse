@@ -20,29 +20,33 @@ This tutorial uses **AWS** as the cloud provider. Register as a new user, and yo
   
 ### Install  
 
-*Elevate to root user. You will need to be root through the rest of the setup and bootstrap process.*  
+```
+# Elevate to root user. You will need to be root through the rest of the setup and bootstrap process  
 sudo -s  
 
-*Install dependencies*  
+# Install dependencies  
 bash <(wget -qO- https://raw.githubusercontent.com/techAPJ/install-rails/master/linux)  
 
-*Clone from discourse repository, or from your folk folder, into ~/discourse*  
+# Clone from discourse repository, or from your folk folder, into ~/discourse  
 git clone https://github.com/discourse/discourse.git ~/discourse  
 
-*Setup database*  
+# Setup database  
 sudo -u postgres createuser -s root  
+```
 
 ### Bootstrap  
-  
-*Install gems*  
+
+```
+# Install gems  
 cd ~/discourse  
 source ~/.bashrc  
 bundle install  
 bundle exec rake db:create db:migrate  
 RAILS_ENV=test bundle exec rake db:create db:migrate  
 
-*Start Rails server*  
+# Start Rails server*  
 bundle exec rails server --binding=0.0.0.0  
+```
 
 ### Open Discourse on port 3000 of your server.  
   
