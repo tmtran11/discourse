@@ -7,23 +7,23 @@ This tutorial uses **AWS** as the cloud provider. Register as a new user, and yo
 ## Create New Cloud Server  
 - Sign up for AWS and create your new cloud server.  
 - In EC2 Console, launch a new **Ubuntu 18.04 LTS x64** instance:  
-   Step 1: Choose AMI
-   > Search for Ubuntu 18.04 LTS x64
-   Step 2: Choose Instance Type
-   > Choose t2.micro for free-tier eleigible
-   Step 3: Configure Instance
-   > Skip  
-   Step 4: Add Storage
-   > Increase storage to 16 GB
-   Step 5: Add Tags
-   > Skip
-   Step 6: Configure Security Group
-   > Enable port 22 (SSH), port 80 (HTTP), port 443(HTTPS), and port 3000  
-   Step 7: Review and Launch
-   > Download key pair to SSH into the instance    
-  
-   Connect to your server via its **Public IPv4** address using SSH, or [Putty][put] on Windows.  
-   Login as **ubuntu**  
+Step 1: Choose AMI    
+> Search for Ubuntu 18.04 LTS x64
+Step 2: Choose Instance Type  
+> Choose t2.micro for free-tier eleigible
+Step 3: Configure Instance  
+> Skip
+Step 4: Add Storage  
+> Increase storage to 16 GB
+Step 5: Add Tags  
+> Skip
+Step 6: Configure Security Group  
+> Enable port 22 (SSH), port 80 (HTTP), port 443(HTTPS), and port 3000  
+Step 7: Review and Launch  
+> Download key pair to SSH into the instance
+
+Connect to your server via its **Public IPv4** address using SSH, or [Putty][put] on Windows.  
+Login as **ubuntu**  
   
 ## Install  
 
