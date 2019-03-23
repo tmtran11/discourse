@@ -16,6 +16,8 @@
 
 .category-boxes,
 .category-boxes-with-topics {
+  // background: linear-gradient(90deg, #3884FF 0%, #43D3C6 100%);
+  border-radius: 5px 5px 0px 0px;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-start;

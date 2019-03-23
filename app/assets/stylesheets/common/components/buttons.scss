@@ -46,13 +46,26 @@
 // Default button
 // --------------------------------------------------
 
+#create-topic {
+  // width: 50px;
+  border: 5px solid #43D3C6;
+  box-sizing: border-box;
+  border-radius: 10px;
+  height: 40px;
+}
+
 .btn {
   border: none;
+  // width: 50px;
+  // height: 50px;
+  // border: 5px solid #43D3C6;
+  // box-sizing: border-box;
+  // border-radius: 10px;
   color: $primary;
   font-weight: normal;
-  background: $primary-low;
+  background: #FFFFFF;
   .d-icon {
-    color: $primary-high;
+    color: #43D3C6;
   }
 
   &[href] {
