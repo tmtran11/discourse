@@ -2,6 +2,16 @@
   margin-bottom: 10px;
   width: 100%;
 
+  thead {
+    background: linear-gradient(90deg, #3884FF 0%, #43D3C6 100%);
+    border-radius: 5px 5px 0px 0px;
+    border-collapse: separate !important;;
+  }
+
+  thead th {
+    color: white;
+  }
+
   td,
   th {
     @extend .list-cell;
@@ -20,7 +30,7 @@
   }
 
   &.with-topics {
-    margin-left: 3px;
+    margin-left: 3px; 
     .category {
       width: 45%;
     }
