@@ -53,6 +53,9 @@ sudo -u postgres createuser -s root
 ## Bootstrap  
 After installation, go to discourse folder, installing gems, execute migration, and start sever.
 ```
+# Transfer owner from root to ubuntu.
+sudo chown -R -v ubuntu ~/discourse
+
 # Install gems  
 cd ~/discourse  
 source ~/.bashrc  
