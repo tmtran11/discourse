@@ -1,10 +1,13 @@
 // --------------------------------------------------
 // Discourse header
 // --------------------------------------------------
+.profiler-result{
+  display: none;  
+}
 
 .d-header {
   left: 0;
-  height: 4em;
+  height: 80px;
   margin-bottom: 15px;
   #site-logo {
     height: 2.57em;

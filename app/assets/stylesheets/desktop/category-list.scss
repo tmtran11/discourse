@@ -86,10 +86,19 @@
     }
     a.last-posted-at,
     a.last-posted-at:visited {
-      font-size: $font-down-1;
+      font-size: 10px;
       color: dark-light-choose($primary-medium, $secondary-high);
+      position: absolute;
+      right: 10px;
+      line-height: 24px;
     }
     .title {
+      font-style: normal;
+      font-weight: 300;
+      font-size: 12px;
+      line-height: 24px;
+
+      color: #828282;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -109,6 +118,7 @@
       border-left: 6px solid;
       h3 {
         font-size: $font-up-2;
+        color: inherit;
         line-height: $line-height-medium;
         a[href] {
           color: $primary;

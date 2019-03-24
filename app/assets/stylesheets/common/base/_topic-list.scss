@@ -13,11 +13,12 @@
 
 .list-controls {
   clear: both;
-  margin-bottom: 5px;
+  margin-bottom: 40px;
   .combo-box .combo-box-header {
     background: $secondary;
     color: $primary;
-    border: 1px solid $primary-medium;
+    border: 1px solid $primary;
+    border-radius: 5px;
     font-size: $font-0;
     transition: none;
     height: 10px; // IE11 needs any height here for vertical centering, overriden elsewhere by min-height
