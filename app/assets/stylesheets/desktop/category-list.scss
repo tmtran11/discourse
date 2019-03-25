@@ -4,8 +4,7 @@
 
   thead {
     background: linear-gradient(90deg, #3884FF 0%, #43D3C6 100%);
-    border-radius: 5px 5px 0px 0px;
-    border-collapse: separate !important;;
+    background-origin: border-box;
   }
 
   thead th {
@@ -30,6 +29,8 @@
   }
 
   &.with-topics {
+    border-left: 5px solid #3884FF;
+    border-radius: 5px 5px 0 0;
     margin-left: 3px; 
     .category {
       width: 45%;
@@ -47,7 +48,7 @@
     text-align: right;
 
     .value {
-      font-size: $font-up-1;
+      font-size: 12px;
     }
     .unit {
       font-size: $font-down-1;
@@ -82,7 +83,7 @@
     display: flex;
     align-items: baseline;
     &:first-of-type {
-      margin-top: 13px;
+      margin-top: 9px;
     }
     a.last-posted-at,
     a.last-posted-at:visited {

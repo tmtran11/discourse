@@ -1,6 +1,10 @@
 // shared styles used
 // on both the login and
 // create account modals
+.d-icon-far-envelope{
+  margin-right: 8px;
+}
+
 .login-modal,
 .create-account {
   #login-buttons:not(.hidden) {
@@ -57,6 +61,7 @@
     box-sizing: border-box;
     flex: 1 0 auto;
     padding: s(0 6);
+    width: 120px;
   }
 
   tr:not(.instructions) {
@@ -90,7 +95,7 @@
 .d-modal.login-modal {
   .modal-body,
   #credentials {
-    display: flex;
+    display: -webkit-box;
     align-items: center;
     padding: 15px 0;
 

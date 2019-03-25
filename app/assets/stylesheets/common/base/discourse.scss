@@ -104,6 +104,13 @@ a.no-href {
 }
 
 img.avatar {
+  // border: 5px solid green;  
+  // border-image-source: linear-gradient(90deg, #3884FF 0%, #43D3C6 100%);
+  // border-image-slice: 5;
+  border: double 2px transparent;
+  background-image: linear-gradient(white, white), linear-gradient(90deg, #3884FF 0%, #43D3C6 100%);
+  background-origin: border-box;
+  background-clip: content-box, border-box;
   border-radius: 50%;
 }
 

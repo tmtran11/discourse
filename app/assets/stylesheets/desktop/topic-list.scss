@@ -52,10 +52,45 @@
   }
 }
 
+.selected-name{
+  font-size: 12px;
+}
+
+.top-date-string {
+  font-size: 12px;
+}
+
 .topic-list {
   @extend .topic-list-icons;
-
   margin: 0 0 10px;
+
+  background-image: linear-gradient(90deg, #3884FF 0%, #43D3C6 100%);
+  background-origin: border-box;
+  border-spacing: 5px;
+  border: 5px solid transparent;
+
+  tbody, thead{
+    background: #ffffff;
+  }
+
+  thead {
+    th {
+      color: #FFFFFF;
+    }
+
+    tr {
+      svg {
+        display: none;
+      }
+    }
+
+    background-image: linear-gradient(90deg, #3884FF 0%, #43D3C6 100%);
+    background-origin: border-box;
+    border-spacing: 5px;
+    border: 5px solid transparent;
+    border-bottom: 2px solid #43D3C6;
+  }
+
   th,
   td {
     padding: 12px 5px;
@@ -66,6 +101,7 @@
       padding-right: 10px;
     }
   }
+
   th {
     button .d-icon {
       color: dark-light-choose($primary-medium, $secondary-medium);
@@ -161,6 +197,7 @@
 
 .topic-list-bottom {
   margin: 20px 0;
+  display: none;
 }
 
 // Misc. stuff
