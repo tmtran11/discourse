@@ -338,8 +338,9 @@ table {
 
 .wrap {
   @extend .clearfix;
-  margin-right: 190px;
-  margin-left: 190px;
+  width: 70%;
+  margin-right: auto;
+  margin-left: auto;
   padding: 0 8px;
 
   .contents {

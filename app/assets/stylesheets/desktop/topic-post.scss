@@ -9,6 +9,8 @@
 .topic-body {
   // this ensures consistent top margin on topic posts even if the first line of a post
   // is a top-margin-less element like a list or image.
+  margin: auto;
+
   .regular {
     margin-top: 15px;
   }
@@ -42,6 +44,10 @@ section.post-menu-area {
 
 .post-links-container {
   margin-left: 11px;
+}
+
+.create.btn.btn-icon-text.ember-view{
+  border-radius: 5px;
 }
 
 nav.post-controls {
@@ -354,7 +360,7 @@ nav.post-controls {
 }
 
 .topic-map {
-  margin: 20px 0 20px 11px;
+  margin: 20px 0 0 0;
   .map {
     .secondary {
       text-align: center;
@@ -402,7 +408,9 @@ nav.post-controls {
       color: dark-light-choose($primary-medium, $secondary-high);
       background: blend-primary-secondary(5%);
       border-left: 1px solid $primary-low;
+      border-right: 1px solid #43D3C6;
       border-top: 1px solid transparent;
+      border-radius: 0 0 7px 0;
       &:hover {
         color: $primary;
         background: $primary-low;
@@ -430,11 +438,18 @@ nav.post-controls {
 
 @mixin topic-footer-button {
   margin-bottom: 5px;
-  margin-right: 10px;
+}
+
+#topic-footer-buttons.ember-view{
+  width: 100%;
+  border-bottom: 1px solid #888;
+}
+
+.create.btn.ember-view{
+  float: right;
 }
 
 #topic-footer-buttons {
-  padding: 10px 10px 0 0;
   float: left;
   p {
     color: dark-light-choose($primary-medium, $secondary-medium);
@@ -626,14 +641,30 @@ blockquote {
     }
   }
 }
+.topic-owner{
+  article{
+    .row{
+      .topic-body{
+        background:linear-gradient(#fff, #fff) padding-box, linear-gradient(90deg, #56CCF2 0%, #43D3C6 100%) border-box;
+      }
+    }
+  }
+}
 
 // variables are used to calculate the width of .gap
 .topic-body {
-  width: calc(#{$topic-body-width} + (#{$topic-body-width-padding} * 2));
-  float: left;
-  position: relative;
-  border-top: 1px solid $primary-low;
-  padding: 12px 0 0 0;
+  width: calc(100% - (45px + 30px));
+  float: right;
+  position: block;
+
+  background:linear-gradient(#fff, #fff) padding-box, linear-gradient(90deg, #BE53EF 0%, #F2C94C 100%) border-box;
+  padding:10px;
+  border: 3px solid transparent;
+  border-radius:10px;
+  display:inline-block;
+  margin: 16px 0;
+
+  padding: 10px 0 0 0;
   .topic-meta-data,
   .cooked {
     padding: 0 $topic-body-width-padding 0.25em $topic-body-width-padding;
@@ -644,8 +675,9 @@ blockquote {
 }
 
 .topic-avatar {
-  border-top: 1px solid $primary-low;
+  // border-top: 1px solid $primary-low;
   padding-top: 15px;
+  padding-right: 20px;
   width: $topic-avatar-width;
   float: left;
   z-index: z("base") + 1;

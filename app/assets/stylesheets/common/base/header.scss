@@ -10,7 +10,7 @@
   border: 1px solid #BDBDBD;
 
   > .wrap {
-    width: calc(100% - 16px); // accommodates for 8px vertical padding
+    width: 70%; // accommodates for 8px vertical padding
     height: 100%;
     .contents {
       display: flex;
@@ -120,7 +120,7 @@
       border-left: 1px solid transparent;
       border-right: 1px solid transparent;
       .d-icon {
-        color: $primary-medium;
+        color: #9a60f3;
       }
     }
     &:active {
@@ -158,7 +158,7 @@
 
   .d-icon {
     width: 100%;
-    font-size: $font-up-4;
+    font-size: 15px;
     line-height: $line-height-large;
     display: inline-block;
     color: $header_primary-low-mid;
