@@ -37,6 +37,7 @@
     left: -38px;
     width: 0px;
     .widget-button {
+      display: none;
       height: 35px;
       border-right: 1px solid dark-light-diff($primary, $secondary, 80%, -70%);
     }

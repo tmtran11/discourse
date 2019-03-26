@@ -11,7 +11,12 @@
     margin-left: 820px;
   }
   @media all and (min-width: 1250px) {
-    margin-left: 900px;
+    position:absolute;
+    left: 0;
+    right:5%;
+    float: right;
+    // margin-left: 900px;
+    // margin-right: -200px;
   }
 
   position: fixed;
@@ -179,6 +184,7 @@
   }
 
   .topic-timeline {
+  	float: right;
     margin-left: 3em;
     transition: opacity 0.2s ease-in;
     touch-action: none;

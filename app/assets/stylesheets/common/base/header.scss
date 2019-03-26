@@ -7,7 +7,7 @@
   z-index: z("header");
   background-color: $header_background;
   // box-shadow: shadow("header");
-  border: 1px solid #BDBDBD;
+  border-bottom: 1px solid #BDBDBD;
 
   > .wrap {
     width: 70%; // accommodates for 8px vertical padding
